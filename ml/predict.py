@@ -1,7 +1,11 @@
 """
 EduGuard — Inference Helpers
 Provides cached model/data loading and batch/single prediction functions.
+Applies tuned per-class decision thresholds (from models/thresholds.json)
+instead of the raw argmax so that Graduate and Enrolled are not swallowed
+by the dominant Dropout class.
 """
+import json
 import pandas as pd
 import numpy as np
 import joblib
@@ -17,6 +21,7 @@ from config.settings import (
     TARGET_COL,
     DROPOUT_CLASS,
     RISK_THRESHOLDS,
+    THRESHOLDS_PATH,
 )
 
 # ─── Cached loaders (Streamlit-agnostic; decorators applied in app layer) ──────
@@ -41,6 +46,19 @@ def load_explainer():
     return joblib.load(path)
 
 
+def load_thresholds() -> dict:
+    """
+    Load per-class decision thresholds from models/thresholds.json.
+    Falls back to uniform thresholds (1/n_classes) if the file is missing
+    (i.e. old model trained without threshold tuning).
+    """
+    if THRESHOLDS_PATH.exists():
+        with open(THRESHOLDS_PATH) as f:
+            data = json.load(f)
+        return data  # {"thresholds": {...}, "classes": [...]}
+    return None
+
+
 def load_demo_data() -> pd.DataFrame:
     """Load and clean the bundled UCI demo dataset."""
     df = pd.read_csv(DEMO_DATASET_PATH)
@@ -56,6 +74,21 @@ def load_uploaded_data(uploaded_file) -> pd.DataFrame:
     return df
 
 
+# ─── Threshold-Aware Prediction Helpers ──────────────────────────────────────
+
+def _apply_thresholds(probas: np.ndarray, classes: list, thresholds: dict) -> np.ndarray:
+    """
+    Apply per-class thresholds via ratio-based argmax:
+        predicted = argmax(proba[i] / threshold[class_i])
+
+    This is equivalent to shifting decision boundaries so that classes with a
+    lower threshold require less probability mass to be predicted.
+    """
+    thresh_arr = np.array([thresholds.get(c, 1.0 / len(classes)) for c in classes])
+    adjusted = probas / thresh_arr
+    return np.array(classes)[np.argmax(adjusted, axis=1)]
+
+
 # ─── Risk Tier ────────────────────────────────────────────────────────────────
 
 def get_risk_tier(prob: float) -> str:
@@ -68,15 +101,18 @@ def get_risk_tier(prob: float) -> str:
 
 # ─── Batch Prediction ─────────────────────────────────────────────────────────
 
-def predict_batch(df: pd.DataFrame, pipeline=None) -> pd.DataFrame:
+def predict_batch(df: pd.DataFrame, pipeline=None, thresholds_data: dict = None) -> pd.DataFrame:
     """
     Run predictions on a full DataFrame.
 
     Adds columns: dropout_prob, risk_tier, predicted_label, student_id.
+    Uses tuned per-class thresholds if thresholds_data is provided.
     Original data columns are preserved.
     """
     if pipeline is None:
         pipeline = load_pipeline()
+    if thresholds_data is None:
+        thresholds_data = load_thresholds()
 
     X = df.drop(columns=[TARGET_COL], errors="ignore")
 
@@ -85,7 +121,14 @@ def predict_batch(df: pd.DataFrame, pipeline=None) -> pd.DataFrame:
 
     probas = pipeline.predict_proba(X)
     dropout_probs = probas[:, dropout_idx]
-    predicted_labels = pipeline.predict(X)
+
+    # Use tuned thresholds if available, otherwise fall back to argmax
+    if thresholds_data and "thresholds" in thresholds_data:
+        predicted_labels = _apply_thresholds(
+            probas, classes, thresholds_data["thresholds"]
+        )
+    else:
+        predicted_labels = pipeline.predict(X)
 
     result = df.copy()
     result["dropout_prob"] = dropout_probs
@@ -98,19 +141,22 @@ def predict_batch(df: pd.DataFrame, pipeline=None) -> pd.DataFrame:
 
 # ─── Single-Row Prediction ────────────────────────────────────────────────────
 
-def predict_single(feature_dict: dict, pipeline=None) -> dict:
+def predict_single(feature_dict: dict, pipeline=None, thresholds_data: dict = None) -> dict:
     """
     Run prediction for a single student (used by the What-If Simulator).
 
     Args:
-        feature_dict: {column_name: value} for all required features.
-        pipeline:     Optional pre-loaded pipeline.
+        feature_dict:    {column_name: value} for all required features.
+        pipeline:        Optional pre-loaded pipeline.
+        thresholds_data: Optional loaded thresholds dict.
 
     Returns:
         dict with dropout_prob, risk_tier, predicted_label, all_probas.
     """
     if pipeline is None:
         pipeline = load_pipeline()
+    if thresholds_data is None:
+        thresholds_data = load_thresholds()
 
     row_df = pd.DataFrame([feature_dict])
 
@@ -119,7 +165,14 @@ def predict_single(feature_dict: dict, pipeline=None) -> dict:
 
     probas = pipeline.predict_proba(row_df)
     dropout_prob = float(probas[0, dropout_idx])
-    predicted_label = pipeline.predict(row_df)[0]
+
+    # Use tuned thresholds if available
+    if thresholds_data and "thresholds" in thresholds_data:
+        predicted_label = _apply_thresholds(
+            probas, classes, thresholds_data["thresholds"]
+        )[0]
+    else:
+        predicted_label = pipeline.predict(row_df)[0]
 
     return {
         "dropout_prob": dropout_prob,

@@ -1,0 +1,12 @@
+{
+  "thresholds": {
+    "Dropout": 0.3032663316582914,
+    "Enrolled": 0.31683417085427135,
+    "Graduate": 0.3333333333333333
+  },
+  "classes": [
+    "Dropout",
+    "Enrolled",
+    "Graduate"
+  ]
+}

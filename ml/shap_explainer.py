@@ -33,14 +33,24 @@ def get_shap_values_for_student(
     row = X_df.iloc[[student_idx]]
     X_transformed = pipeline.named_steps["preprocessor"].transform(row)
 
-    # Get SHAP values — multiclass RF returns list[class][samples, features]
+    # Get SHAP values — XGBClassifier returns array[samples, features, classes] or list
     shap_vals = explainer.shap_values(X_transformed)
 
-    classes = list(pipeline.classes_)
+    # pipeline.classes_ comes from XGBLabelEncoded.classes_ (string labels)
+    classes = list(pipeline.named_steps["model"].classes_)
     dropout_idx = classes.index(DROPOUT_CLASS)
 
     if isinstance(shap_vals, list):
+        # Old format (RF, older SHAP): list of [samples x features] per class
         student_shap = shap_vals[dropout_idx][0]
+        base = (
+            float(explainer.expected_value[dropout_idx])
+            if hasattr(explainer.expected_value, "__len__")
+            else float(explainer.expected_value)
+        )
+    elif hasattr(shap_vals, "ndim") and shap_vals.ndim == 3:
+        # XGBoost / newer SHAP: ndarray [samples, features, classes]
+        student_shap = shap_vals[0, :, dropout_idx]
         base = (
             float(explainer.expected_value[dropout_idx])
             if hasattr(explainer.expected_value, "__len__")

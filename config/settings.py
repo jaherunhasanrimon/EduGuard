@@ -9,6 +9,7 @@ BASE_DIR = Path(__file__).parent.parent
 DATA_DIR = BASE_DIR / "data"
 MODELS_DIR = BASE_DIR / "models"
 ASSETS_DIR = BASE_DIR / "assets"
+THRESHOLDS_PATH = MODELS_DIR / "thresholds.json"
 
 # ─── Application Metadata ─────────────────────────────────────────────────────
 APP_TITLE = "EduGuard"
