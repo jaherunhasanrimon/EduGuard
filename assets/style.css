@@ -1,0 +1,357 @@
+/* EduGuard — Global Stylesheet
+   Injected via st.markdown(unsafe_allow_html=True)
+   Theme: White cards on #F1F5F9 light-grey surface
+   Primary: #4F46E5 (indigo) | High: #E24B4A | Medium: #BA7517 | Low: #639922
+*/
+
+/* ─── Google Font ─────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* ─── Root Overrides ──────────────────────────────────────────────────────── */
+html, body, [class*="css"] {
+    font-family: 'Inter', sans-serif !important;
+}
+
+/* ─── Main Content Area ───────────────────────────────────────────────────── */
+.main .block-container {
+    padding-top: 1.5rem;
+    padding-bottom: 2rem;
+    max-width: 1400px;
+}
+
+/* ─── Page Header ─────────────────────────────────────────────────────────── */
+.eg-page-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #1E3A5F 0%, #2D5F8A 100%);
+    border-radius: 16px;
+    margin-bottom: 28px;
+    box-shadow: 0 4px 20px rgba(30, 58, 95, 0.2);
+}
+
+.eg-page-header img {
+    width: 52px;
+    height: 52px;
+    object-fit: contain;
+}
+
+.eg-page-header-text h1 {
+    color: #FFFFFF;
+    font-size: 1.6rem;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: -0.3px;
+}
+
+.eg-page-header-text p {
+    color: rgba(255,255,255,0.75);
+    font-size: 0.85rem;
+    margin: 2px 0 0 0;
+    font-weight: 400;
+}
+
+/* ─── KPI Cards ───────────────────────────────────────────────────────────── */
+.eg-kpi-card {
+    background: #FFFFFF;
+    border-radius: 14px;
+    padding: 22px 20px;
+    border: 1px solid #E2E8F0;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    text-align: center;
+}
+
+.eg-kpi-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.1);
+}
+
+.eg-kpi-value {
+    font-size: 2.4rem;
+    font-weight: 800;
+    color: #1E293B;
+    line-height: 1;
+    margin-bottom: 6px;
+}
+
+.eg-kpi-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+
+.eg-kpi-delta {
+    font-size: 0.75rem;
+    margin-top: 8px;
+    font-weight: 500;
+}
+
+.eg-kpi-high   .eg-kpi-value { color: #E24B4A; }
+.eg-kpi-medium .eg-kpi-value { color: #BA7517; }
+.eg-kpi-low    .eg-kpi-value { color: #639922; }
+.eg-kpi-total  .eg-kpi-value { color: #4F46E5; }
+
+/* ─── Risk Badges ─────────────────────────────────────────────────────────── */
+.eg-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+}
+
+.eg-badge-high   { background: #FEE2E2; color: #C62828; border: 1px solid #FECACA; }
+.eg-badge-medium { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
+.eg-badge-low    { background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0; }
+
+/* ─── Cause Tag Pills ─────────────────────────────────────────────────────── */
+.eg-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    background: #EEF2FF;
+    color: #4338CA;
+    border: 1px solid #C7D2FE;
+    margin: 2px 2px;
+    white-space: nowrap;
+}
+
+/* ─── Section Cards ───────────────────────────────────────────────────────── */
+.eg-card {
+    background: #FFFFFF;
+    border-radius: 14px;
+    padding: 24px;
+    border: 1px solid #E2E8F0;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    margin-bottom: 20px;
+}
+
+.eg-card-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #F1F5F9;
+}
+
+/* ─── Risk Gauge / Probability Bar ───────────────────────────────────────── */
+.eg-risk-meter {
+    margin: 16px 0;
+}
+
+.eg-risk-meter-bar {
+    height: 12px;
+    border-radius: 999px;
+    background: #E2E8F0;
+    overflow: hidden;
+    margin: 8px 0;
+}
+
+.eg-risk-meter-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.5s ease;
+}
+
+.eg-risk-fill-high   { background: linear-gradient(90deg, #FCA5A5, #E24B4A); }
+.eg-risk-fill-medium { background: linear-gradient(90deg, #FCD34D, #BA7517); }
+.eg-risk-fill-low    { background: linear-gradient(90deg, #86EFAC, #639922); }
+
+/* ─── Intervention Cards ──────────────────────────────────────────────────── */
+.eg-intervention {
+    display: flex;
+    gap: 14px;
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+    border-left: 4px solid transparent;
+    background: #FAFAFA;
+}
+
+.eg-intervention-high   { border-left-color: #E24B4A; background: #FFF5F5; }
+.eg-intervention-medium { border-left-color: #BA7517; background: #FFFBEB; }
+.eg-intervention-low    { border-left-color: #639922; background: #F0FDF4; }
+
+.eg-intervention-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.eg-intervention-body {}
+
+.eg-intervention-title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #1E293B;
+    margin-bottom: 4px;
+}
+
+.eg-intervention-text {
+    font-size: 0.82rem;
+    color: #475569;
+    line-height: 1.55;
+}
+
+.eg-intervention-trigger {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #6366F1;
+    background: #EEF2FF;
+    padding: 2px 7px;
+    border-radius: 4px;
+}
+
+/* ─── Student Profile Card ────────────────────────────────────────────────── */
+.eg-profile-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.eg-profile-field {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    padding: 12px 14px;
+}
+
+.eg-profile-field-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #94A3B8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.eg-profile-field-value {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1E293B;
+}
+
+/* ─── Login Page ──────────────────────────────────────────────────────────── */
+.eg-login-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80vh;
+}
+
+.eg-login-card {
+    background: #FFFFFF;
+    border-radius: 20px;
+    padding: 48px 40px;
+    border: 1px solid #E2E8F0;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+    text-align: center;
+    max-width: 420px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.eg-login-logo {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px auto;
+    display: block;
+}
+
+.eg-login-title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #1E293B;
+    margin-bottom: 6px;
+}
+
+.eg-login-subtitle {
+    font-size: 0.875rem;
+    color: #64748B;
+    margin-bottom: 4px;
+}
+
+.eg-login-university {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #4F46E5;
+    margin-bottom: 32px;
+}
+
+/* ─── Sidebar Styling ─────────────────────────────────────────────────────── */
+[data-testid="stSidebar"] {
+    background: #FFFFFF;
+    border-right: 1px solid #E2E8F0;
+}
+
+[data-testid="stSidebar"] .eg-sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0 20px 0;
+    border-bottom: 1px solid #F1F5F9;
+    margin-bottom: 16px;
+}
+
+/* ─── Divider ─────────────────────────────────────────────────────────────── */
+.eg-divider {
+    height: 1px;
+    background: #E2E8F0;
+    margin: 20px 0;
+}
+
+/* ─── Stat Change Delta ───────────────────────────────────────────────────── */
+.eg-delta-up   { color: #E24B4A; }
+.eg-delta-down { color: #639922; }
+
+/* ─── Table Progress Bars ─────────────────────────────────────────────────── */
+.eg-progress-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 120px;
+}
+.eg-progress-bar {
+    flex: 1;
+    height: 7px;
+    background: #E2E8F0;
+    border-radius: 999px;
+    overflow: hidden;
+}
+.eg-progress-fill {
+    height: 100%;
+    border-radius: 999px;
+}
+.eg-progress-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    min-width: 38px;
+    text-align: right;
+}
+
+/* ─── Stacked section title ───────────────────────────────────────────────── */
+.eg-section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1E293B;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
