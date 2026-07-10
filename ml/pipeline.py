@@ -1,16 +1,93 @@
 """
 EduGuard — ML Pipeline
-Builds a scikit-learn Pipeline combining preprocessing and the XGBoost model.
+Builds a scikit-learn Pipeline combining feature engineering,
+preprocessing, and the XGBoost model.
+
+Feature engineering (5 new features derived from the two notebooks):
+  • total_approved         = sum of approved units across both semesters
+  • academic_success       = sum of semester grades (raw signal of grade level)
+  • approval_rate          = approved / (enrolled + 1) — completion rate
+  • performance_change     = 2nd sem grade − 1st sem grade — trajectory
+  • evaluation_efficiency  = approved / (evaluations + 1) — exam efficiency
+
 XGBoost requires numeric class labels, so we wrap it with a LabelEncoder
 inside a custom estimator so the pipeline remains sklearn-compatible.
 """
 import numpy as np
-from sklearn.base import BaseEstimator, ClassifierMixin
+import pandas as pd
+from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import LabelEncoder, OrdinalEncoder, StandardScaler
 from xgboost import XGBClassifier
 
+
+# ── Feature Engineering ───────────────────────────────────────────────────────
+
+class FeatureEngineer(BaseEstimator, TransformerMixin):
+    """
+    Adds 5 derived features inspired by the two best-performing Kaggle
+    notebooks in trained/. Must sit before the ColumnTransformer in the
+    pipeline so the new columns are available to the preprocessor.
+
+    Works on both DataFrames and numpy arrays; always returns a DataFrame.
+    """
+
+    # The 5 new column names — referenced in build_pipeline so they are
+    # kept in sync automatically.
+    NEW_FEATURES = [
+        "total_approved",
+        "academic_success",
+        "approval_rate",
+        "performance_change",
+        "evaluation_efficiency",
+    ]
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        if not isinstance(X, pd.DataFrame):
+            X = pd.DataFrame(X)
+
+        X_out = X.copy()
+
+        # 1. total_approved
+        X_out["total_approved"] = (
+            X_out["Curricular units 1st sem (approved)"]
+            + X_out["Curricular units 2nd sem (approved)"]
+        )
+
+        # 2. academic_success (combined semester grade totals)
+        X_out["academic_success"] = (
+            X_out["Curricular units 1st sem (grade)"]
+            + X_out["Curricular units 2nd sem (grade)"]
+        )
+
+        # 3. approval_rate (approved / enrolled, +1 to avoid div-by-zero)
+        X_out["approval_rate"] = X_out["total_approved"] / (
+            X_out["Curricular units 1st sem (enrolled)"]
+            + X_out["Curricular units 2nd sem (enrolled)"]
+            + 1
+        )
+
+        # 4. performance_change (grade trajectory across semesters)
+        X_out["performance_change"] = (
+            X_out["Curricular units 2nd sem (grade)"]
+            - X_out["Curricular units 1st sem (grade)"]
+        )
+
+        # 5. evaluation_efficiency (how many approved per evaluation)
+        X_out["evaluation_efficiency"] = X_out["total_approved"] / (
+            X_out["Curricular units 1st sem (evaluations)"]
+            + X_out["Curricular units 2nd sem (evaluations)"]
+            + 1
+        )
+
+        return X_out
+
+
+# ── XGBoost Wrapper ───────────────────────────────────────────────────────────
 
 class XGBLabelEncoded(BaseEstimator, ClassifierMixin):
     """
@@ -21,12 +98,12 @@ class XGBLabelEncoded(BaseEstimator, ClassifierMixin):
 
     def __init__(
         self,
-        n_estimators=500,
-        max_depth=6,
-        learning_rate=0.05,
-        subsample=0.8,
-        colsample_bytree=0.8,
-        min_child_weight=3,
+        n_estimators=300,
+        max_depth=4,
+        learning_rate=0.03,
+        subsample=0.7,
+        colsample_bytree=0.7,
+        min_child_weight=4,
         tree_method="hist",
         random_state=42,
         n_jobs=-1,
@@ -69,22 +146,31 @@ class XGBLabelEncoded(BaseEstimator, ClassifierMixin):
         return self.le_.inverse_transform(np.argmax(proba, axis=1))
 
 
+# ── Pipeline Builder ──────────────────────────────────────────────────────────
+
 def build_pipeline(numeric_features: list, categorical_features: list) -> Pipeline:
     """
     Build and return the full sklearn Pipeline.
 
-    Preprocessing:
-        - Numerical  → StandardScaler
-        - Categorical → OrdinalEncoder (handles unseen values gracefully)
-    Model:
-        - XGBLabelEncoded (XGBoost + internal LabelEncoder for string targets)
+    Steps:
+        1. FeatureEngineer — adds 5 derived numeric features
+        2. ColumnTransformer (preprocessor)
+               Numerical  → StandardScaler  (original + 5 new features)
+               Categorical → OrdinalEncoder (handles unseen values gracefully)
+        3. XGBLabelEncoded — XGBoost + internal LabelEncoder for string targets
+
+    Note: settings.py feature lists are NOT modified. The 5 new features are
+    appended here so all downstream code (predict.py, app/**) stays intact.
     """
+    # Extend the numeric feature list with the 5 engineered columns
+    extended_numeric = numeric_features + FeatureEngineer.NEW_FEATURES
+
     preprocessor = ColumnTransformer(
         transformers=[
             (
                 "num",
                 StandardScaler(),
-                numeric_features,
+                extended_numeric,
             ),
             (
                 "cat",
@@ -99,12 +185,12 @@ def build_pipeline(numeric_features: list, categorical_features: list) -> Pipeli
     )
 
     model = XGBLabelEncoded(
-        n_estimators=500,
-        max_depth=6,
-        learning_rate=0.05,
-        subsample=0.8,
-        colsample_bytree=0.8,
-        min_child_weight=3,
+        n_estimators=300,
+        max_depth=4,
+        learning_rate=0.03,
+        subsample=0.7,
+        colsample_bytree=0.7,
+        min_child_weight=4,
         tree_method="hist",
         random_state=42,
         n_jobs=-1,
@@ -112,6 +198,7 @@ def build_pipeline(numeric_features: list, categorical_features: list) -> Pipeli
 
     pipeline = Pipeline(
         steps=[
+            ("fe", FeatureEngineer()),
             ("preprocessor", preprocessor),
             ("model", model),
         ]

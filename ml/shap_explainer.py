@@ -31,7 +31,15 @@ def get_shap_values_for_student(
         dict with keys: shap_values, feature_names, feature_values, base_value
     """
     row = X_df.iloc[[student_idx]]
-    X_transformed = pipeline.named_steps["preprocessor"].transform(row)
+
+    # If the pipeline has a FeatureEngineer step (fe), apply it first so the
+    # preprocessor receives the enriched row (with the 5 engineered columns).
+    if "fe" in pipeline.named_steps:
+        row_enriched = pipeline.named_steps["fe"].transform(row)
+    else:
+        row_enriched = row
+
+    X_transformed = pipeline.named_steps["preprocessor"].transform(row_enriched)
 
     # Get SHAP values — XGBClassifier returns array[samples, features, classes] or list
     shap_vals = explainer.shap_values(X_transformed)
@@ -67,7 +75,7 @@ def get_shap_values_for_student(
     feature_names = list(num_names) + list(cat_names)
 
     feature_values = {
-        fname: row.iloc[0].get(fname, "N/A") if fname in row.columns else "N/A"
+        fname: row_enriched.iloc[0][fname] if fname in row_enriched.columns else "N/A"
         for fname in feature_names
     }
 

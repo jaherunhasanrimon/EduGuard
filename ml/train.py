@@ -85,7 +85,7 @@ def apply_thresholds(probas, classes, thresholds):
 
 def main():
     print("=" * 60)
-    print("  EduGuard — Model Training Pipeline  (XGBoost)")
+    print("  EduGuard — Model Training Pipeline  (XGBoost + Feature Engineering)")
     print("=" * 60)
 
     # ── 1. Load data ──────────────────────────────────────────────
@@ -110,7 +110,7 @@ def main():
     print(f"      Train: {len(X_train):,}  |  Test: {len(X_test):,}")
 
     # ── 3. Build pipeline ─────────────────────────────────────────
-    print("\n[3/7] Building XGBoost Pipeline …")
+    print("\n[3/7] Building XGBoost Pipeline (with Feature Engineering) …")
     pipeline = build_pipeline(NUMERIC_FEATURES, CATEGORICAL_FEATURES)
 
     # Balanced sample weights (replaces class_weight='balanced' for XGBoost)
@@ -215,11 +215,15 @@ def main():
         json.dump(thresholds_data, f, indent=2)
     print(f"      ✅  Thresholds saved    → {THRESHOLDS_PATH}")
 
-    # SHAP TreeExplainer — must receive the raw XGBClassifier, not the wrapper
+    # SHAP TreeExplainer — must receive the raw XGBClassifier, not the wrapper.
+    # The pipeline now has 3 steps: fe → preprocessor → model.
+    # We must pass X_train through both fe and preprocessor to get the
+    # numeric matrix that the raw XGBClassifier was trained on.
     print("      Building SHAP TreeExplainer (this may take ~30s) …")
     xgb_wrapper = pipeline.named_steps["model"]
     raw_xgb = xgb_wrapper.xgb_          # inner XGBClassifier
-    X_train_transformed = pipeline.named_steps["preprocessor"].transform(X_train)
+    X_train_fe = pipeline.named_steps["fe"].transform(X_train)
+    X_train_transformed = pipeline.named_steps["preprocessor"].transform(X_train_fe)
 
     explainer = shap.TreeExplainer(raw_xgb)
 

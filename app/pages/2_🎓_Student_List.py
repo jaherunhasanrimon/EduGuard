@@ -70,8 +70,8 @@ with st.sidebar:
     )
     filter_gender = st.multiselect(
         "Gender (0=F, 1=M)",
-        options=sorted(df_pred["Gender"].unique().tolist()) if "Gender" in df_pred.columns else [],
-        default=sorted(df_pred["Gender"].unique().tolist()) if "Gender" in df_pred.columns else [],
+        options=sorted(df_pred["Gender"].dropna().unique().tolist()) if "Gender" in df_pred.columns else [],
+        default=sorted(df_pred["Gender"].dropna().unique().tolist()) if "Gender" in df_pred.columns else [],
     )
     filter_scholarship = st.multiselect(
         "Scholarship Holder",
