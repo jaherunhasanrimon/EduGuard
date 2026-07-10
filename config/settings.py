@@ -134,33 +134,3 @@ FEATURE_DISPLAY_NAMES = {
     "GDP": "Regional GDP",
 }
 
-# ─── What-If Simulator Features ───────────────────────────────────────────────
-WHATIF_FEATURES = [
-    "Curricular units 2nd sem (approved)",
-    "Curricular units 2nd sem (grade)",
-    "Curricular units 1st sem (approved)",
-    "Curricular units 1st sem (grade)",
-    "Tuition fees up to date",
-    "Curricular units 2nd sem (enrolled)",
-    "Curricular units 1st sem (enrolled)",
-    "Age at enrollment",
-    "Debtor",
-    "Scholarship holder",
-    "Curricular units 2nd sem (evaluations)",
-    "GDP",
-]
-
-WHATIF_CONFIG = {
-    "Curricular units 2nd sem (approved)":  {"min": 0,    "max": 20,   "step": 1,   "type": "int"},
-    "Curricular units 2nd sem (grade)":     {"min": 0.0,  "max": 20.0, "step": 0.5, "type": "float"},
-    "Curricular units 1st sem (approved)":  {"min": 0,    "max": 20,   "step": 1,   "type": "int"},
-    "Curricular units 1st sem (grade)":     {"min": 0.0,  "max": 20.0, "step": 0.5, "type": "float"},
-    "Tuition fees up to date":              {"min": 0,    "max": 1,    "step": 1,   "type": "select", "options": [0, 1], "labels": ["No (Overdue)", "Yes (Paid)"]},
-    "Curricular units 2nd sem (enrolled)":  {"min": 0,    "max": 20,   "step": 1,   "type": "int"},
-    "Curricular units 1st sem (enrolled)":  {"min": 0,    "max": 20,   "step": 1,   "type": "int"},
-    "Age at enrollment":                    {"min": 17,   "max": 70,   "step": 1,   "type": "int"},
-    "Debtor":                               {"min": 0,    "max": 1,    "step": 1,   "type": "select", "options": [0, 1], "labels": ["No", "Yes"]},
-    "Scholarship holder":                   {"min": 0,    "max": 1,    "step": 1,   "type": "select", "options": [0, 1], "labels": ["No", "Yes"]},
-    "Curricular units 2nd sem (evaluations)": {"min": 0,  "max": 33,   "step": 1,   "type": "int"},
-    "GDP":                                  {"min": -4.0, "max": 4.0,  "step": 0.1, "type": "float"},
-}

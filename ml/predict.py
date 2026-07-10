@@ -1,6 +1,6 @@
 """
 EduGuard — Inference Helpers
-Provides cached model/data loading and batch/single prediction functions.
+Provides cached model/data loading and batch prediction functions.
 Applies tuned per-class decision thresholds (from models/thresholds.json)
 instead of the raw argmax so that Graduate and Enrolled are not swallowed
 by the dominant Dropout class.
@@ -138,45 +138,3 @@ def predict_batch(df: pd.DataFrame, pipeline=None, thresholds_data: dict = None)
 
     return result
 
-
-# ─── Single-Row Prediction ────────────────────────────────────────────────────
-
-def predict_single(feature_dict: dict, pipeline=None, thresholds_data: dict = None) -> dict:
-    """
-    Run prediction for a single student (used by the What-If Simulator).
-
-    Args:
-        feature_dict:    {column_name: value} for all required features.
-        pipeline:        Optional pre-loaded pipeline.
-        thresholds_data: Optional loaded thresholds dict.
-
-    Returns:
-        dict with dropout_prob, risk_tier, predicted_label, all_probas.
-    """
-    if pipeline is None:
-        pipeline = load_pipeline()
-    if thresholds_data is None:
-        thresholds_data = load_thresholds()
-
-    row_df = pd.DataFrame([feature_dict])
-
-    classes = list(pipeline.classes_)
-    dropout_idx = classes.index(DROPOUT_CLASS)
-
-    probas = pipeline.predict_proba(row_df)
-    dropout_prob = float(probas[0, dropout_idx])
-
-    # Use tuned thresholds if available
-    if thresholds_data and "thresholds" in thresholds_data:
-        predicted_label = _apply_thresholds(
-            probas, classes, thresholds_data["thresholds"]
-        )[0]
-    else:
-        predicted_label = pipeline.predict(row_df)[0]
-
-    return {
-        "dropout_prob": dropout_prob,
-        "risk_tier": get_risk_tier(dropout_prob),
-        "predicted_label": predicted_label,
-        "all_probas": {cls: float(p) for cls, p in zip(classes, probas[0])},
-    }

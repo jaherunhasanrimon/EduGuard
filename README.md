@@ -46,7 +46,7 @@ EduGuard/
 │   └── pages/
 │       ├── 2_🎓_Student_List.py        # Filterable risk table
 │       ├── 3_🔍_Student_Detail.py      # Per-student SHAP + interventions
-│       └── 4_🔮_WhatIf.py             # What-If Simulator
+│        
 ├── ml/
 │   ├── pipeline.py                     # sklearn Pipeline (preprocessor + RF)
 │   ├── train.py                        # Training script → saves .pkl files

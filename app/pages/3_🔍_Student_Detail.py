@@ -165,10 +165,7 @@ with left_col:
     )
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # What-If Button
-    if st.button("🔮 Open in What-If Simulator", use_container_width=True, type="secondary"):
-        st.session_state["whatif_student_idx"] = student_idx
-        st.switch_page("pages/4_🔮_WhatIf.py")
+
 
 with right_col:
     # SHAP Chart
