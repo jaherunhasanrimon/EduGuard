@@ -49,15 +49,22 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ─── Load data ────────────────────────────────────────────────────────────────
-df_pred = st.session_state.get("df_pred")
-if df_pred is None:
-    st.warning("⚠️ Data not loaded. Please return to the **Overview** page first.")
-    st.stop()
+# ─── Sidebar & Data Load ──────────────────────────────────────────────────────
+from app.components.sidebar import render_sidebar
 
-# ─── Sidebar Filters ──────────────────────────────────────────────────────────
-with st.sidebar:
-    st.markdown("### 🔽 Filters")
+# Placeholders for global variables populated by draw_filters
+filter_tier = ["High", "Medium", "Low"]
+filter_outcome = []
+filter_gender = []
+filter_scholarship = [0, 1]
+search_id = 1
+
+def draw_filters():
+    global filter_tier, filter_outcome, filter_gender, filter_scholarship, search_id
+    df = st.session_state["df_pred"]
+    
+    st.markdown("<div class='sidebar-slot-title'>🔽 Filters</div>", unsafe_allow_html=True)
+    
     filter_tier = st.multiselect(
         "Risk Tier",
         options=["High", "Medium", "Low"],
@@ -65,13 +72,13 @@ with st.sidebar:
     )
     filter_outcome = st.multiselect(
         "Predicted Outcome",
-        options=sorted(df_pred["predicted_label"].unique().tolist()),
-        default=sorted(df_pred["predicted_label"].unique().tolist()),
+        options=sorted(df["predicted_label"].unique().tolist()),
+        default=sorted(df["predicted_label"].unique().tolist()),
     )
     filter_gender = st.multiselect(
         "Gender (0=F, 1=M)",
-        options=sorted(df_pred["Gender"].dropna().unique().tolist()) if "Gender" in df_pred.columns else [],
-        default=sorted(df_pred["Gender"].dropna().unique().tolist()) if "Gender" in df_pred.columns else [],
+        options=sorted(df["Gender"].dropna().unique().tolist()) if "Gender" in df.columns else [],
+        default=sorted(df["Gender"].dropna().unique().tolist()) if "Gender" in df.columns else [],
     )
     filter_scholarship = st.multiselect(
         "Scholarship Holder",
@@ -79,12 +86,16 @@ with st.sidebar:
         default=[0, 1],
         format_func=lambda x: "Yes" if x == 1 else "No",
     )
-    search_id = st.number_input("Jump to Student ID", min_value=1, max_value=len(df_pred), value=1, step=1)
+    search_id = st.number_input("Jump to Student ID", min_value=1, max_value=len(df), value=1, step=1)
 
     st.markdown("---")
     if st.button("🔍 View Student Detail", use_container_width=True):
         st.session_state["detail_student_idx"] = int(search_id) - 1
         st.switch_page("pages/3_🔍_Student_Detail.py")
+
+render_sidebar("student_list", slot_fn=draw_filters)
+df_pred = st.session_state["df_pred"]
+
 
 # ─── Apply Filters ────────────────────────────────────────────────────────────
 filtered = df_pred.copy()

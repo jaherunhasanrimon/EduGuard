@@ -36,93 +36,21 @@ import pandas as pd
 if not require_auth():
     st.stop()
 
-# ─── Sidebar ──────────────────────────────────────────────────────────────────
-with st.sidebar:
-    logo_path = ASSETS_DIR / "diu_logo.svg"
-    col1, col2 = st.columns([1, 3])
-    with col1:
-        if logo_path.exists():
-            st.image(str(logo_path), width=40)
-    with col2:
-        st.markdown(
-            f"<div style='font-weight:800;font-size:1rem;color:#1E293B;line-height:1.2;'>"
-            f"{APP_TITLE}</div>"
-            f"<div style='font-size:0.7rem;color:#64748B;'>{COMPETITION_LABEL}</div>",
-            unsafe_allow_html=True,
-        )
+# ─── Sidebar & Data Load ──────────────────────────────────────────────────────
+from app.components.sidebar import render_sidebar
+render_sidebar("dashboard")
+df_pred = st.session_state["df_pred"]
 
-    st.markdown("---")
-    st.markdown("**📂 Data Source**")
-
-    source = st.radio(
-        "Choose dataset",
-        ["Demo dataset (UCI)", "Upload CSV"],
-        key="data_source",
-        label_visibility="collapsed",
-    )
-
-    if source == "Upload CSV":
-        uploaded_file = st.file_uploader(
-            "Upload student CSV",
-            type=["csv"],
-            help="CSV must include the same columns as the UCI student dataset.",
-        )
-
-        # Persist bytes immediately so they survive page switches / re-runs
-        if uploaded_file is not None:
-            st.session_state["uploaded_bytes"]    = uploaded_file.read()
-            st.session_state["uploaded_filename"] = uploaded_file.name
-
-        # Show active-file banner + reset control
-        if "uploaded_bytes" in st.session_state:
-            st.success(
-                f"📂 **Active:** {st.session_state['uploaded_filename']}",
-                icon="✅",
-            )
-            if st.button("🔄 Reset to Demo Dataset", use_container_width=True):
-                st.session_state.pop("uploaded_bytes", None)
-                st.session_state.pop("uploaded_filename", None)
-                st.rerun()
-    else:
-        # User switched back to Demo via the radio — clear any persisted upload
-        st.session_state.pop("uploaded_bytes", None)
-        st.session_state.pop("uploaded_filename", None)
-
-    st.markdown("---")
-
-    if st.button("🚪  Sign Out", use_container_width=True):
-        logout()
-
-# ─── Load data & run predictions ─────────────────────────────────────────────
-@st.cache_resource(show_spinner="Loading model…")
-def get_pipeline():
-    return load_pipeline()
-
-@st.cache_data(show_spinner="Running predictions…")
-def get_predictions(source_key: str, file_bytes=None):
-    pipeline = get_pipeline()
-    if source_key == "upload" and file_bytes is not None:
-        import io
-        df = load_uploaded_data(io.BytesIO(file_bytes))
-    else:
-        df = load_demo_data()
-    return predict_batch(df, pipeline)
-
-# Decide data key — use persisted bytes if available, fallback to demo
-if source == "Upload CSV" and "uploaded_bytes" in st.session_state:
-    df_pred = get_predictions("upload", st.session_state["uploaded_bytes"])
-else:
-    df_pred = get_predictions("demo")
-
-st.session_state["df_pred"] = df_pred
 
 # ─── Page Header ─────────────────────────────────────────────────────────────
+logo_path = ASSETS_DIR / "diu_logo.svg"
 logo_html = ""
 if logo_path.exists():
     import base64
     with open(logo_path, "rb") as f:
         logo_b64 = base64.b64encode(f.read()).decode()
     logo_html = f'<img src="data:image/svg+xml;base64,{logo_b64}" style="width:50px;height:50px;object-fit:contain;">'
+
 
 st.markdown(
     f"""

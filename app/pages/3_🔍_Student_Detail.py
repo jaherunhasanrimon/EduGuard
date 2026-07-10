@@ -52,12 +52,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ─── Load data & model ────────────────────────────────────────────────────────
-df_pred = st.session_state.get("df_pred")
-if df_pred is None:
-    st.warning("⚠️ Data not loaded. Please return to the **Overview** page first.")
-    st.stop()
-
+# ─── Load model ──────────────────────────────────────────────────────────────
 from config.settings import MODELS_DIR
 
 def _pipeline_mtime():
@@ -79,47 +74,159 @@ def get_explainer(_mtime):
 pipeline = get_pipeline(_pipeline_mtime())
 explainer = get_explainer(_explainer_mtime())
 
-# ─── Student Selector ────────────────────────────────────────────────────────
+# ─── Sidebar & Data Load ──────────────────────────────────────────────────────
+from app.components.sidebar import render_sidebar
+
+# Render standard sidebar without custom slots
+render_sidebar("student_details")
+df_pred = st.session_state["df_pred"]
 max_id = len(df_pred)
-default_idx = st.session_state.get("detail_student_idx", 0)
-default_idx = max(0, min(default_idx, max_id - 1))
 
-col_sel, col_info = st.columns([1, 3])
-with col_sel:
-    student_num = st.number_input(
-        "Select Student ID",
-        min_value=1,
-        max_value=max_id,
-        value=int(default_idx + 1),
-        step=1,
-        key="detail_student_id",
+# Default active student index
+if "detail_student_idx" not in st.session_state:
+    st.session_state["detail_student_idx"] = 0
+
+# Deterministic student name generator
+def get_student_name(student_id):
+    first_names = ["John", "Jane", "Rahim", "Karim", "Amina", "Sajid", "Emily", "Michael", "Sarah", "David", "Fatima", "Tanvir", "Jessica", "Daniel", "Sofia", "Ahmed"]
+    last_names = ["Doe", "Smith", "Hasan", "Ali", "Chowdhury", "Khan", "Johnson", "Brown", "Miller", "Davis", "Begum", "Rahman", "Wilson", "Taylor", "Gomez", "Islam"]
+    f_idx = (int(student_id) * 7) % len(first_names)
+    l_idx = (int(student_id) * 13) % len(last_names)
+    return f"{first_names[f_idx]} {last_names[l_idx]}"
+
+# Initialize search query in session state
+if "search_input_val" not in st.session_state:
+    st.session_state["search_input_val"] = ""
+
+# ─── Search Toolbar UI ────────────────────────────────────────────────────────
+st.markdown('<div class="search-toolbar-wrapper">', unsafe_allow_html=True)
+col_left, col_center, col_right = st.columns([2.5, 4.5, 2])
+
+with col_left:
+    st.markdown(
+        """
+        <div class="search-title-box">
+          <div class="search-title-text">Search Student</div>
+          <div class="search-subtitle-text">Search by Student ID or Name</div>
+        </div>
+        """,
+        unsafe_allow_html=True
     )
-    student_idx = student_num - 1
-    st.session_state["detail_student_idx"] = student_idx
 
+with col_center:
+    search_query = st.text_input(
+        "Search Input",
+        value=st.session_state["search_input_val"],
+        placeholder="Enter Student ID or Name…",
+        label_visibility="collapsed",
+        key="student_search_input"
+    )
+
+with col_right:
+    c_search, c_clear = st.columns(2)
+    with c_search:
+        search_clicked = st.button("Search", type="primary", use_container_width=True)
+    with c_clear:
+        clear_clicked = st.button("Clear", use_container_width=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+# Search Logic Execution
+search_triggered = search_clicked or (search_query and search_query != st.session_state.get("last_search_query"))
+
+if search_triggered:
+    st.session_state["last_search_query"] = search_query
+    st.session_state["search_input_val"] = search_query
+    
+    if search_query.strip():
+        with st.spinner("Searching cohort..."):
+            query = search_query.strip().lower()
+            
+            # Check if search by ID
+            if query.isdigit():
+                target_id = int(query)
+                if 1 <= target_id <= max_id:
+                    st.session_state["detail_student_idx"] = target_id - 1
+                    st.toast(f"✅ Loaded Student ID {target_id}", icon="🎉")
+                    st.session_state.pop("search_matches", None)
+                    st.rerun()
+                else:
+                    st.error(f"❌ Invalid Student ID (must be between 1 and {max_id})")
+                    st.session_state.pop("search_matches", None)
+            else:
+                # Search by name
+                matches = []
+                for i in range(max_id):
+                    s_id = int(df_pred.iloc[i]["student_id"])
+                    s_name = get_student_name(s_id)
+                    if query in s_name.lower():
+                        matches.append((i, s_id, s_name))
+                        
+                if len(matches) == 1:
+                    st.session_state["detail_student_idx"] = matches[0][0]
+                    st.toast(f"✅ Loaded {matches[0][2]} (ID: {matches[0][1]})", icon="🎉")
+                    st.session_state.pop("search_matches", None)
+                    st.rerun()
+                elif len(matches) > 1:
+                    st.session_state["search_matches"] = matches[:8] # limit suggestions to 8
+                    st.toast(f"ℹ️ Found {len(matches)} matching students. Select from suggestions below.", icon="🔍")
+                else:
+                    st.error(f"❌ No student found matching '{search_query}'")
+                    st.session_state.pop("search_matches", None)
+
+if clear_clicked:
+    st.session_state["search_input_val"] = ""
+    st.session_state.pop("last_search_query", None)
+    st.session_state.pop("search_matches", None)
+    st.rerun()
+
+# Suggestions autocomplete list
+if "search_matches" in st.session_state and st.session_state["search_matches"]:
+    st.markdown("<div class='suggestions-label'>Matching Students:</div>", unsafe_allow_html=True)
+    matches = st.session_state["search_matches"]
+    
+    # Render suggestion badges
+    cols = st.columns(min(len(matches), 4))
+    for idx, match in enumerate(matches[:4]):
+        col_cell = cols[idx % 4]
+        with col_cell:
+            if st.button(f"👤 {match[2]} (ID: {match[1]})", key=f"suggest_{match[1]}_{idx}", use_container_width=True):
+                st.session_state["detail_student_idx"] = match[0]
+                st.session_state["search_input_val"] = f"{match[2]} (ID: {match[1]})"
+                st.session_state.pop("search_matches", None)
+                st.rerun()
+
+# Get currently active student details
+student_idx = st.session_state["detail_student_idx"]
 student_row = df_pred.iloc[student_idx]
 dropout_prob = float(student_row["dropout_prob"])
 risk_tier    = student_row["risk_tier"]
 prediction   = student_row["predicted_label"]
 
-with col_info:
-    risk_color = RISK_COLORS.get(risk_tier, "#64748B")
-    st.markdown(
-        f"""
-        <div style="display:flex;align-items:center;gap:16px;padding:16px;
-                    background:#FFFFFF;border-radius:12px;border:1px solid #E2E8F0;
-                    box-shadow:0 2px 10px rgba(0,0,0,0.05);">
-          <div style="font-size:3rem;font-weight:900;color:{risk_color};">{dropout_prob:.1%}</div>
-          <div>
-            <div style="font-size:0.8rem;color:#64748B;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Dropout Probability</div>
-            {risk_badge_html(risk_tier)}
-            &nbsp;&nbsp;
-            {target_badge_html(prediction)}
-          </div>
+# Generate student name for display
+student_name = get_student_name(student_row["student_id"])
+
+
+# ─── Student Summary Card ─────────────────────────────────────────────────────
+risk_color = RISK_COLORS.get(risk_tier, "#64748B")
+st.markdown(
+    f"""
+    <div style="display:flex;align-items:center;gap:18px;padding:20px;
+                background:#FFFFFF;border-radius:12px;border:1px solid #E2E8F0;
+                box-shadow:0 2px 10px rgba(0,0,0,0.05); margin-bottom:20px;">
+      <div style="font-size:3.2rem;font-weight:900;color:{risk_color};line-height:1;">{dropout_prob:.1%}</div>
+      <div>
+        <div style="font-size:0.8rem;color:#64748B;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Dropout Probability</div>
+        <div style="margin-top: 6px;">
+          {risk_badge_html(risk_tier)}
+          &nbsp;&nbsp;
+          {target_badge_html(prediction)}
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
+      </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 # ─── Risk Meter ───────────────────────────────────────────────────────────────
 fill_class = f"eg-risk-fill-{risk_tier.lower()}"
@@ -148,6 +255,7 @@ with left_col:
     st.markdown('<div class="eg-card-title">👤 Student Profile</div>', unsafe_allow_html=True)
 
     profile_fields = [
+        ("Full Name", student_name),
         ("Age at Enrollment", student_row.get("Age at enrollment", "—")),
         ("Gender", "Male" if student_row.get("Gender", 0) == 1 else "Female"),
         ("Scholarship", "Yes" if student_row.get("Scholarship holder", 0) == 1 else "No"),
@@ -156,6 +264,7 @@ with left_col:
         ("International", "Yes" if student_row.get("International", 0) == 1 else "No"),
         ("Sem 1 Passed", f"{int(student_row.get('Curricular units 1st sem (approved)', 0))} units"),
         ("Sem 2 Passed", f"{int(student_row.get('Curricular units 2nd sem (approved)', 0))} units"),
+
         ("Sem 1 Grade", f"{student_row.get('Curricular units 1st sem (grade)', 0):.1f} / 20"),
         ("Sem 2 Grade", f"{student_row.get('Curricular units 2nd sem (grade)', 0):.1f} / 20"),
     ]
