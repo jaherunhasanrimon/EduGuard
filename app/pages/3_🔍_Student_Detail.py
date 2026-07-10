@@ -58,16 +58,26 @@ if df_pred is None:
     st.warning("⚠️ Data not loaded. Please return to the **Overview** page first.")
     st.stop()
 
+from config.settings import MODELS_DIR
+
+def _pipeline_mtime():
+    p = MODELS_DIR / "pipeline.pkl"
+    return int(p.stat().st_mtime) if p.exists() else 0
+
+def _explainer_mtime():
+    p = MODELS_DIR / "shap_explainer.pkl"
+    return int(p.stat().st_mtime) if p.exists() else 0
+
 @st.cache_resource(show_spinner="Loading model…")
-def get_pipeline():
+def get_pipeline(_mtime):
     return load_pipeline()
 
 @st.cache_resource(show_spinner="Loading SHAP explainer…")
-def get_explainer():
+def get_explainer(_mtime):
     return load_explainer()
 
-pipeline = get_pipeline()
-explainer = get_explainer()
+pipeline = get_pipeline(_pipeline_mtime())
+explainer = get_explainer(_explainer_mtime())
 
 # ─── Student Selector ────────────────────────────────────────────────────────
 max_id = len(df_pred)

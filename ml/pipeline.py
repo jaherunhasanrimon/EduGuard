@@ -52,6 +52,23 @@ class FeatureEngineer(BaseEstimator, TransformerMixin):
 
         X_out = X.copy()
 
+        # Fill NaN in source columns with 0 before computing derived features.
+        # Real student records may be missing curricular unit data for semesters
+        # not yet completed; 0 is the correct neutral value in all five formulas.
+        sem_cols = [
+            "Curricular units 1st sem (approved)",
+            "Curricular units 2nd sem (approved)",
+            "Curricular units 1st sem (grade)",
+            "Curricular units 2nd sem (grade)",
+            "Curricular units 1st sem (enrolled)",
+            "Curricular units 2nd sem (enrolled)",
+            "Curricular units 1st sem (evaluations)",
+            "Curricular units 2nd sem (evaluations)",
+        ]
+        for col in sem_cols:
+            if col in X_out.columns:
+                X_out[col] = X_out[col].fillna(0)
+
         # 1. total_approved
         X_out["total_approved"] = (
             X_out["Curricular units 1st sem (approved)"]
@@ -83,6 +100,10 @@ class FeatureEngineer(BaseEstimator, TransformerMixin):
             + X_out["Curricular units 2nd sem (evaluations)"]
             + 1
         )
+
+        # Replace any remaining NaN/inf in engineered cols with 0
+        for col in self.NEW_FEATURES:
+            X_out[col] = X_out[col].fillna(0).replace([float("inf"), float("-inf")], 0)
 
         return X_out
 
