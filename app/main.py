@@ -61,13 +61,32 @@ with st.sidebar:
         label_visibility="collapsed",
     )
 
-    uploaded_file = None
     if source == "Upload CSV":
         uploaded_file = st.file_uploader(
             "Upload student CSV",
             type=["csv"],
             help="CSV must include the same columns as the UCI student dataset.",
         )
+
+        # Persist bytes immediately so they survive page switches / re-runs
+        if uploaded_file is not None:
+            st.session_state["uploaded_bytes"]    = uploaded_file.read()
+            st.session_state["uploaded_filename"] = uploaded_file.name
+
+        # Show active-file banner + reset control
+        if "uploaded_bytes" in st.session_state:
+            st.success(
+                f"📂 **Active:** {st.session_state['uploaded_filename']}",
+                icon="✅",
+            )
+            if st.button("🔄 Reset to Demo Dataset", use_container_width=True):
+                st.session_state.pop("uploaded_bytes", None)
+                st.session_state.pop("uploaded_filename", None)
+                st.rerun()
+    else:
+        # User switched back to Demo via the radio — clear any persisted upload
+        st.session_state.pop("uploaded_bytes", None)
+        st.session_state.pop("uploaded_filename", None)
 
     st.markdown("---")
 
@@ -89,10 +108,9 @@ def get_predictions(source_key: str, file_bytes=None):
         df = load_demo_data()
     return predict_batch(df, pipeline)
 
-# Decide data key
-if source == "Upload CSV" and uploaded_file is not None:
-    file_bytes = uploaded_file.read()
-    df_pred = get_predictions("upload", file_bytes)
+# Decide data key — use persisted bytes if available, fallback to demo
+if source == "Upload CSV" and "uploaded_bytes" in st.session_state:
+    df_pred = get_predictions("upload", st.session_state["uploaded_bytes"])
 else:
     df_pred = get_predictions("demo")
 
