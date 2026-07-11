@@ -7,6 +7,30 @@ from pathlib import Path
 ROOT = Path(__file__).parent.parent.parent
 PERSIST_CSV_PATH = ROOT / "data" / "active_upload.csv"
 PERSIST_META_PATH = ROOT / "data" / "active_upload_meta.json"
+SETTINGS_PATH = ROOT / "config" / "settings_user.json"
+
+_THRESHOLD_DEFAULTS = {"high_threshold": 65, "medium_threshold": 35}
+
+def get_active_thresholds() -> dict:
+    """
+    Return the user-saved risk thresholds as decimal fractions (0–1).
+    Falls back to hardcoded defaults (0.65 / 0.35) if no config is saved yet.
+    """
+    if SETTINGS_PATH.exists():
+        try:
+            with open(SETTINGS_PATH, "r") as f:
+                cfg = json.load(f)
+            return {
+                "high":   cfg.get("high_threshold",   _THRESHOLD_DEFAULTS["high_threshold"])   / 100,
+                "medium": cfg.get("medium_threshold",  _THRESHOLD_DEFAULTS["medium_threshold"]) / 100,
+            }
+        except Exception:
+            pass
+    return {
+        "high":   _THRESHOLD_DEFAULTS["high_threshold"]   / 100,
+        "medium": _THRESHOLD_DEFAULTS["medium_threshold"] / 100,
+    }
+
 
 def init_data_state(get_predictions_fn):
     """

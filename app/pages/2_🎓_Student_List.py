@@ -19,6 +19,7 @@ st.set_page_config(
 
 from app.auth import require_auth
 from app.components.risk_badge import risk_badge_html, cause_tag_html, target_badge_html
+from app.components.data_manager import get_active_thresholds
 from config.settings import ASSETS_DIR, COMPETITION_LABEL, UNIVERSITY_NAME
 from engine.intervention_rules import get_cause_tags
 from ml.predict import load_pipeline, load_demo_data, predict_batch
@@ -96,8 +97,15 @@ def draw_filters():
 render_sidebar("student_list", slot_fn=draw_filters)
 df_pred = st.session_state["df_pred"]
 
+# Re-classify risk_tier with user-saved thresholds
+_t = get_active_thresholds()
+_hi, _med = _t["high"], _t["medium"]
+df_pred = df_pred.copy()
+df_pred["risk_tier"] = df_pred["dropout_prob"].apply(
+    lambda p: "High" if p >= _hi else ("Medium" if p >= _med else "Low")
+)
 
-# ─── Apply Filters ────────────────────────────────────────────────────────────
+# ─── Apply Filters ──────────────────────────────────────────────────────────
 filtered = df_pred.copy()
 if filter_tier:
     filtered = filtered[filtered["risk_tier"].isin(filter_tier)]

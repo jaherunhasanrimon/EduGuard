@@ -38,8 +38,22 @@ if not require_auth():
 
 # ─── Sidebar & Data Load ──────────────────────────────────────────────────────
 from app.components.sidebar import render_sidebar
+from app.components.data_manager import get_active_thresholds
 render_sidebar("dashboard")
 df_pred = st.session_state["df_pred"]
+
+# ─── Apply user-saved thresholds to risk_tier ────────────────────────────────
+_thresholds = get_active_thresholds()
+_hi  = _thresholds["high"]
+_med = _thresholds["medium"]
+
+def _classify(p: float) -> str:
+    if p >= _hi:  return "High"
+    if p >= _med: return "Medium"
+    return "Low"
+
+df_pred = df_pred.copy()
+df_pred["risk_tier"] = df_pred["dropout_prob"].apply(_classify)
 
 
 # ─── Page Header ─────────────────────────────────────────────────────────────
@@ -206,13 +220,13 @@ hist_fig.add_trace(go.Histogram(
     marker=dict(color="#4F46E5", opacity=0.7, line=dict(color="#3730A3", width=0.5)),
     hovertemplate="Risk %{x:.0%}–%{x:.0%}: %{y} students<extra></extra>",
 ))
-# Threshold lines
-hist_fig.add_vline(x=0.35, line_dash="dash", line_color="#BA7517",
-                   annotation_text="Medium threshold (35%)",
+# Threshold lines — reads from user-saved Settings config
+hist_fig.add_vline(x=_med, line_dash="dash", line_color="#BA7517",
+                   annotation_text=f"Medium threshold ({int(_med*100)}%)",
                    annotation_position="top right",
                    annotation_font=dict(size=10, color="#BA7517"))
-hist_fig.add_vline(x=0.65, line_dash="dash", line_color="#E24B4A",
-                   annotation_text="High threshold (65%)",
+hist_fig.add_vline(x=_hi,  line_dash="dash", line_color="#E24B4A",
+                   annotation_text=f"High threshold ({int(_hi*100)}%)",
                    annotation_position="top right",
                    annotation_font=dict(size=10, color="#E24B4A"))
 hist_fig.update_layout(
