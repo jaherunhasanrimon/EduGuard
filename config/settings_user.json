@@ -1,5 +1,5 @@
 {
-  "high_threshold": 80,
+  "high_threshold": 90,
   "medium_threshold": 35,
   "notify_channels": [
     "Email Notification",

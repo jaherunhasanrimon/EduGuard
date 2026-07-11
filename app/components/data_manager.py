@@ -32,44 +32,40 @@ def get_active_thresholds() -> dict:
     }
 
 
-def init_data_state(get_predictions_fn):
+def init_data_state(get_predictions_fn=None):
     """
-    Initializes data states on startup/refresh.
-    Restores session state from persistent files if they exist on disk.
-    Ensures st.session_state['df_pred'] is populated.
+    Restore disk-persisted upload metadata into session state on startup/refresh.
+
+    This function is now responsible ONLY for re-hydrating session_state from
+    the on-disk persisted CSV/meta files (e.g. after a browser refresh).
+    It does NOT trigger predictions itself — that is handled by
+    sidebar._reload_predictions(), which runs only when df_pred is absent.
+
+    The `get_predictions_fn` argument is kept for backward compatibility but
+    is no longer used.
     """
-    # 1. Load from disk if available and session state is empty
     if PERSIST_CSV_PATH.exists() and PERSIST_META_PATH.exists():
         try:
             with open(PERSIST_META_PATH, "r") as f:
                 meta = json.load(f)
-            
-            # Restore filename and selection status
+
             if "uploaded_filename" not in st.session_state:
                 st.session_state["uploaded_filename"] = meta.get("filename", "Uploaded Dataset")
-            
+
             if "uploaded_bytes" not in st.session_state:
                 with open(PERSIST_CSV_PATH, "rb") as f:
                     st.session_state["uploaded_bytes"] = f.read()
-            
+
             if "data_source" not in st.session_state:
                 st.session_state["data_source"] = meta.get("selected_source", "Upload CSV")
-        except Exception as e:
-            # Handle potential corruption gracefully
+
+        except Exception:
+            # Corrupted files — wipe and fall back to demo
             clear_uploaded_dataset()
     else:
         if "data_source" not in st.session_state:
             st.session_state["data_source"] = "Demo dataset (UCI)"
 
-    # 2. Get predictions based on active source
-    source = st.session_state.get("data_source", "Demo dataset (UCI)")
-    if source == "Upload CSV" and "uploaded_bytes" in st.session_state:
-        df_pred = get_predictions_fn("upload", st.session_state["uploaded_bytes"])
-    else:
-        df_pred = get_predictions_fn("demo")
-    
-    st.session_state["df_pred"] = df_pred
-    return df_pred
 
 def save_uploaded_dataset(file_bytes, filename):
     """
