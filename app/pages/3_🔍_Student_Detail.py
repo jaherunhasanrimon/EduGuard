@@ -318,36 +318,64 @@ st.caption(
 student_dict = student_row.to_dict()
 interventions = get_interventions(student_dict, top_factors)
 
+def get_lucide_svg(emoji_icon):
+    svgs = {
+        "🚨": '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-triangle"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>',
+        "📚": '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-open"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>',
+        "💰": '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-credit-card"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>',
+        "🏦": '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-landmark"><line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><path d="m12 2-8 5h16Z"/></svg>',
+        "📝": '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>',
+        "🎓": '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-graduation-cap"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/><path d="M21.5 12v6"/></svg>',
+        "⚖️": '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-scale"><path d="m16 16 3-8 3 8c-.87.65-2.24 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-2.24 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h18"/></svg>',
+        "♿": '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-accessibility"><circle cx="16" cy="4" r="1"/><path d="m18 19 1-7-6 1"/><path d="m5 8 3-3 5.5 3-2.36 3.5"/><path d="M4 24h4v-7h4v-4H4z"/></svg>',
+        "🌍": '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-globe"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>',
+        "⚠️": '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-circle"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>',
+    }
+    return svgs.get(emoji_icon, svgs["⚠️"])
+
 if not interventions:
     st.info("No specific intervention rules triggered for this student.")
 else:
-    priority_colors = {"HIGH": "eg-intervention-high", "MEDIUM": "eg-intervention-medium", "LOW": "eg-intervention-low"}
-    priority_labels = {"HIGH": "🔴 HIGH PRIORITY", "MEDIUM": "🟡 MEDIUM PRIORITY", "LOW": "🟢 LOW PRIORITY"}
+    priority_colors = {"HIGH": "eg-iv-high", "MEDIUM": "eg-iv-medium", "LOW": "eg-iv-low"}
+    priority_labels = {"HIGH": "Critical", "MEDIUM": "Medium", "LOW": "Low"}
+    priority_pills = {"HIGH": "iv-badge-high", "MEDIUM": "iv-badge-medium", "LOW": "iv-badge-low"}
 
     for iv in interventions:
-        p_class = priority_colors.get(iv["priority"], "eg-intervention-medium")
+        p_class = priority_colors.get(iv["priority"], "eg-iv-medium")
         p_label = priority_labels.get(iv["priority"], iv["priority"])
+        p_badge = priority_pills.get(iv["priority"], "iv-badge-medium")
+        svg_icon = get_lucide_svg(iv['icon'])
+        
         st.markdown(
             f"""
-            <div class="eg-intervention {p_class}">
-              <div class="eg-intervention-icon">{iv['icon']}</div>
-              <div class="eg-intervention-body">
-                <div class="eg-intervention-title">{iv['title']}</div>
-                <div style="font-size:0.7rem;font-weight:600;color:#94A3B8;margin-bottom:4px;">{p_label}</div>
-                <div class="eg-intervention-text">{iv['action']}</div>
-                <div class="eg-intervention-trigger">Trigger: {iv['trigger']}</div>
+            <div class="intervention-card-redesign {p_class}">
+              <div class="intervention-header-redesign">
+                <div class="intervention-icon-redesign">{svg_icon}</div>
+                <div class="intervention-title-redesign">{iv['title']}</div>
+                <div class="intervention-badge-redesign {p_badge}">{p_label}</div>
+              </div>
+              <div class="intervention-body-redesign">
+                <p class="intervention-text-redesign">{iv['action']}</p>
+                <div class="intervention-trigger-redesign">Triggered by: {iv['trigger']}</div>
               </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
+# Notice banner
+shield_check_svg = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check"><path d="M20 13c0 5-3.5 7.5-7.66 9.7a1 1 0 0 1-.68 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 .76-.97l8-2a1 1 0 0 1 .48 0l8 2A1 1 0 0 1 20 6z"/><path d="m9 12 2 2 4-4"/></svg>'
+
 st.markdown(
-    "<div style='margin-top:16px;padding:12px 16px;background:#F0FDF4;border-radius:10px;"
-    "border-left:4px solid #639922;font-size:0.8rem;color:#166534;'>"
-    "⚠️ <strong>Human-in-the-Loop:</strong> EduGuard generates suggestions only. "
-    "Every intervention must be reviewed and approved by a qualified academic advisor "
-    "before being communicated to the student."
-    "</div>",
+    f"""
+    <div class="notice-banner-redesign">
+      <div class="notice-icon-redesign">{shield_check_svg}</div>
+      <div class="notice-body-redesign">
+        <strong>Human-in-the-Loop Validation Required:</strong> EduGuard suggestions are advisory only. 
+        All academic and financial interventions must be authorized by a qualified advisor before action.
+      </div>
+    </div>
+    """,
     unsafe_allow_html=True,
 )
+
