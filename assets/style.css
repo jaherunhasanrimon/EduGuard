@@ -348,44 +348,48 @@ body,
 }
 
 [data-testid="stSidebarUserContent"] {
-    padding-top: 1.5rem !important;
+    padding-top: 0rem !important;
     padding-bottom: 2rem !important;
 }
 
 /* Sidebar Header */
 .sidebar-header {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 12px;
-    padding: 8px 4px 16px 4px;
+    gap: 10px;
+    padding: 0px 4px 15px 4px !important;
     margin-bottom: 20px;
     border-bottom: 1px solid #F1F5F9;
+    text-align: center;
 }
 
 .sidebar-logo-img {
-    width: 36px;
-    height: 36px;
+    width: 110px;
+    height: 110px;
     object-fit: contain;
+    display: block;
 }
 
 .sidebar-header-text {
     display: flex;
     flex-direction: column;
+    align-items: center;
 }
 
 .sidebar-title {
-    font-size: 1.15rem;
+    font-size: 1.55rem;
     font-weight: 800;
     color: #1E293B;
     line-height: 1.1;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
 }
 
 .sidebar-subtitle {
     font-size: 0.7rem;
     color: #64748B;
     font-weight: 500;
-    margin-top: 1px;
+    margin-top: 3px;
 }
 
 /* Section Labels */
@@ -445,6 +449,7 @@ div[data-testid="stPageLink"] a span {
     border-left: 3px solid #4F46E5 !important;
     font-weight: 600 !important;
 }
+
 .sidebar-nav-container[data-active-page="dashboard"] div[data-testid="stPageLink"]:nth-child(1) a span {
     color: #4F46E5 !important;
 }
@@ -455,6 +460,7 @@ div[data-testid="stPageLink"] a span {
     border-left: 3px solid #4F46E5 !important;
     font-weight: 600 !important;
 }
+
 .sidebar-nav-container[data-active-page="student_list"] div[data-testid="stPageLink"]:nth-child(2) a span {
     color: #4F46E5 !important;
 }
@@ -465,6 +471,7 @@ div[data-testid="stPageLink"] a span {
     border-left: 3px solid #4F46E5 !important;
     font-weight: 600 !important;
 }
+
 .sidebar-nav-container[data-active-page="student_details"] div[data-testid="stPageLink"]:nth-child(3) a span {
     color: #4F46E5 !important;
 }
@@ -475,6 +482,7 @@ div[data-testid="stPageLink"] a span {
     border-left: 3px solid #4F46E5 !important;
     font-weight: 600 !important;
 }
+
 .sidebar-nav-container[data-active-page="analytics"] div[data-testid="stPageLink"]:nth-child(4) a span {
     color: #4F46E5 !important;
 }
@@ -485,6 +493,7 @@ div[data-testid="stPageLink"] a span {
     border-left: 3px solid #4F46E5 !important;
     font-weight: 600 !important;
 }
+
 .sidebar-nav-container[data-active-page="settings"] div[data-testid="stPageLink"]:nth-child(5) a span {
     color: #4F46E5 !important;
 }
@@ -548,9 +557,20 @@ div[data-testid="stPageLink"] a span {
 }
 
 @keyframes pulse {
-    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
-    70% { transform: scale(1); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0); }
-    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+    }
+
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0);
+    }
+
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+    }
 }
 
 /* Slot custom content title */
@@ -765,7 +785,7 @@ div[data-testid="stPageLink"] a span {
         top: 0 !important;
         padding: 16px !important;
     }
-    
+
     .search-toolbar-wrapper .stColumn {
         width: 100% !important;
         margin-bottom: 8px !important;
@@ -792,15 +812,18 @@ div[data-testid="stPageLink"] a span {
 
 /* Left borders based on severity */
 .intervention-card-redesign.eg-iv-high {
-    border-left-color: #EF4444 !important; /* Critical Red */
+    border-left-color: #EF4444 !important;
+    /* Critical Red */
 }
 
 .intervention-card-redesign.eg-iv-medium {
-    border-left-color: #F59E0B !important; /* Medium Orange */
+    border-left-color: #F59E0B !important;
+    /* Medium Orange */
 }
 
 .intervention-card-redesign.eg-iv-low {
-    border-left-color: #10B981 !important; /* Low Green */
+    border-left-color: #10B981 !important;
+    /* Low Green */
 }
 
 /* Header layout: Icon + Title + Severity Pill */
@@ -852,7 +875,8 @@ div[data-testid="stPageLink"] a span {
 
 /* Body layout: Description text + Trigger badge */
 .intervention-body-redesign {
-    padding-left: 30px !important; /* aligned with title text, offsetting icon */
+    padding-left: 30px !important;
+    /* aligned with title text, offsetting icon */
 }
 
 .intervention-text-redesign {
@@ -882,7 +906,8 @@ div[data-testid="stPageLink"] a span {
     padding: 16px 20px !important;
     background-color: #FFFFFF !important;
     border: 1px solid #E2E8F0 !important;
-    border-left: 4px solid #10B981 !important; /* Green left border */
+    border-left: 4px solid #10B981 !important;
+    /* Green left border */
     border-radius: 12px !important;
     margin-top: 24px !important;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
